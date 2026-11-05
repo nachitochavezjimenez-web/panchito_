@@ -1,3 +1,5 @@
+@using System.Net.Sockets
+@using System.Reflection.Emit
 @inherits LayoutComponentBase
 @implements IDisposable
 @inject NavigationManager NavigationManager
@@ -61,6 +63,8 @@
     private List<Link> links = new List<Link>()
     {
         new("Inicio", "/"),
+        new Link("Catalogo","/catalogo"),
+        new Link("Usuarios","/usuarios")
     };
 
     protected override void OnInitialized()
