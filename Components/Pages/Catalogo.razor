@@ -1,40 +1,57 @@
-@page "/catalogo"
-@using sharpness_sharp.Components.UIcomponents
-@using sharpness_sharp.Data
 @using sharpness_sharp.Data.Models
-@inject ApplicationAuthDbContext _dbService
- 
-<EditForm FormName="agregar-cafe" Model="@newCafe" OnSubmit="AgregarCafe">
-    <InputText @bind-Value="newCafe.Imagen" class="border-2 px-2" placeholder="introduce la url de la imagen"/>
-    <InputText @bind-Value="newCafe.NombreCafe" class="border-2 px-2" placeholder="introduce el nombre del cafe"/>
-    <InputText @bind-Value="newCafe.DescripcionCafe" class="border-2 px-2" placeholder="introduce la descripcion del cafe"/>
-    <InputNumber @bind-Value="@newCafe.PrecioCafe" class="border-2 px-2" placeholder="introduce el precio del cafe"/>
- 
-    <button type="submit">Guardar</button>
-</EditForm>
- 
-<div class="grid grid-cols-4 gap-4 p-4">
-    @foreach (Cafe cafe in lstCafes)
+@page "/catalogo"
+<div class="flex flex-col justify-center border-2 w-10vw rounded-md p-4 m-2 gap-2">
+    <input type="text" class="border-2" @bind="Imagen" disabled="@(!ModoEdicion)"/>
+    <img src="@Imagen" class="w-full h-1/2 object-cover rounded-md" />
+    <input class="text-bold text-2xl border-2" type="text" @bind="NombreCafe" disabled="@(!ModoEdicion)"/>
+    <input class="font-bold text-white bg-green-600 rounded-xl p-3 border-2" type="number" @bind="PrecioCafe" disabled="@(!ModoEdicion)"/>
+
+    @if (ModoEdicion)
     {
-        <CoffeCard Imagen="@cafe.Imagen" NombreCafe="@cafe.NombreCafe" DescripcionCafe="@cafe.DescripcionCafe"
-                    PrecioCafe="@cafe.PrecioCafe"></CoffeCard>
+        <button class="font-bold  ui-btn bg-green-300 rounded-xl p-3 border-2" @onclick="() => {
+            CambiarModoEdicion();
+            ActualizarProducto();
+            }">Guardar</button>
     }
+    else
+    {
+        <button class="font-bold  ui-btn bg-yellow-600 rounded-xl p-3 border-2" @onclick="CambiarModoEdicion">Editar</button>
+    }
+
+    <button class="font-bold  ui-btn bg-red-600 text-white rounded-xl p-3 border-2" @onclick="EliminarProducto">Eliminar</button>
 </div>
- 
+
 @code {
-    private Cafe newCafe = new();
-    private List<Cafe> lstCafes = new();
-    protected override Task OnInitializedAsync()
+    private bool ModoEdicion = false;
+
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string Imagen { get; set; }
+    [Parameter] public string NombreCafe { get; set; }
+    [Parameter] public string DescripcionCafe { get; set; }
+    [Parameter] public decimal PrecioCafe { get; set; }
+
+    [Parameter] public EventCallback<Cafe> EnviarNotificacionActualizacion {get;set;}
+    [Parameter] public EventCallback<int> EnviarNotificacionEliminacion {get;set;}
+
+    private void CambiarModoEdicion()
     {
-        lstCafes = _dbService.Cafes.ToList();
-        return base.OnInitializedAsync();
+        ModoEdicion = !ModoEdicion;
+        StateHasChanged();
     }
-    private Task AgregarCafe()
+    private Task ActualizarProducto()
     {
-        _dbService.Cafes.Add(newCafe);
-        _dbService.SaveChanges();
-        newCafe = new();
+        EnviarNotificacionActualizacion.InvokeAsync(new Cafe()
+        {
+            Id = Id,
+            Imagen = Imagen,
+            NombreCafe = NombreCafe,
+            DescripcionCafe = DescripcionCafe,
+            PrecioCafe = PrecioCafe,
+        });
         return Task.CompletedTask;
     }
+    private Task EliminarProducto()
+    {
+        return EnviarNotificacionEliminacion.InvokeAsync(Id);
+    }
 }
- 
